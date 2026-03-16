@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>G4 單字播放器 - 複選與連動篩選版</title>
+    <style>
+    body { font-family: "Microsoft JhengHei", sans-serif; margin: 10px; background-color: #f4f7f9; color: #333; }
+    .container { max-width: 1000px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    
+    h1 { text-align: center; font-size: 1.5em; color: #2c3e50; }
+
+    /* 篩選區 */
+    .filter-section { 
+        background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; 
+        display: flex; flex-direction: column; gap: 15px; border: 1px solid #dee2e6;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    label { font-weight: bold; font-size: 0.9em; color: #666; }
+
+    .week-checkbox-group {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px; max-height: 150px; overflow-y: auto;
+        border: 1px solid #ced4da; padding: 10px; border-radius: 6px;
+    }
+    .week-item { font-size: 0.95em; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+    /* 按鈕樣式 */
+    .btn-group { display: flex; gap: 10px; }
+    button.small-btn { padding: 4px 10px; font-size: 0.8em; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; }
+    .btn-speak { background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-size: 1.1em; cursor: pointer; }
+
+    /* 表格設計：關鍵在於手機版的轉換 */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    thead { background-color: #4a90e2; color: white; }
+    th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+
+    /* 手機模式 (螢幕寬度小於 768px) */
+    @media screen and (max-width: 768px) {
+        .filter-section { padding: 10px; }
+        
+        /* 隱藏表頭 */
+        thead { display: none; }
+        
+        /* 讓每一列變成一張卡片 */
+        tr { 
+            display: block; background: #fff; border: 1px solid #e0e0e0; 
+            border-radius: 10px; margin-bottom: 15px; padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        /* 讓每個儲存格變成塊狀 */
+        td { display: block; width: 100%; border: none; padding: 5px 0; box-sizing: border-box; }
+        
+        /* 特殊欄位排版 */
+        td:nth-of-type(1):before { content: "週次："; font-weight: bold; color: #888; }
+        td:nth-of-type(2):before { content: "主題："; font-weight: bold; color: #888; }
+        
+        .word-cell { font-size: 1.5em; text-align: center; color: #000; padding: 10px 0; }
+        
+        td:nth-of-type(5) { 
+            text-align: center; background: #f9f9f9; border-radius: 6px; padding: 12px; 
+            margin-top: 10px; color: #4a90e2; font-weight: bold;
+        }
+    }
+
+    /* 平板與電腦模式 */
+    @media screen and (min-width: 769px) {
+        .filter-section { flex-direction: row; }
+        h1 { font-size: 2em; }
+        .btn-speak { width: auto; }
+        .word-cell { font-size: 1.2em; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 Grade 4 單字播放器 </h1>
+    
+    <div class="filter-group">
+        <label>1. 選擇週次 (可複選)：</label>
+        <div style="margin-bottom: 8px;">
+           <button type="button" onclick="selectAllWeeks(true)" style="padding: 2px 8px; font-size: 0.8em; cursor: pointer;">全選</button>
+           <button type="button" onclick="selectAllWeeks(false)" style="padding: 2px 8px; font-size: 0.8em; cursor: pointer;">全不選</button>
+        </div>
+        <div id="weekContainer" class="week-checkbox-group">
+            </div>
+    </div>
+
+        <div class="filter-group">
+            <label>2. 選擇主題 (連動)：</label>
+            <select id="subjectFilter">
+                <option value="all">顯示該週所有主題</option>
+            </select>
+        </div>
+    </div>
+    
+    <table id="vocabTable">
+        <thead>
+            <tr>
+                <th width="12%">週次</th>
+                <th width="25%">類型 / 主題</th>
+                <th width="25%">單字</th>
+                <th width="15%">發音</th>
+                <th>中文翻譯</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script src="data.js"></script>
+
+<script>
+    const weekContainer = document.getElementById("weekContainer");
+const subjectSelect = document.getElementById("subjectFilter");
+const tableBody = document.querySelector("#vocabTable tbody");
+
+// 1. 資料預處理 (填補留白)
+let tW = "", tT = "", tS = "";
+const processedData = wordData.map(item => {
+    if (item.w && item.w.trim() !== "") tW = item.w;
+    if (item.t && item.t.trim() !== "") tT = item.t;
+    if (item.s && item.s.trim() !== "") tS = item.s;
+    return { ...item, _week: tW, _type: tT, _subject: tS };
+});
+
+// 2. 初始化週次複選框
+const uniqueWeeks = [...new Set(processedData.map(d => d._week))];
+uniqueWeeks.forEach(w => {
+    const label = document.createElement("label");
+    label.className = "week-item";
+    label.innerHTML = `<input type="checkbox" name="week" value="${w}"> ${w}`;
+    // 監聽勾選事件
+    label.querySelector('input').addEventListener('change', updateSubjectOptions);
+    weekContainer.appendChild(label);
+});
+
+// 3. 全選 / 全不選功能
+function selectAllWeeks(isSelectAll) {
+    const checkboxes = document.querySelectorAll('input[name="week"]');
+    checkboxes.forEach(cb => cb.checked = isSelectAll);
+    updateSubjectOptions(); // 觸發連動
+}
+
+// 4. 動態更新主題選單 (連動邏輯)
+function updateSubjectOptions() {
+    const selectedWeeks = getSelectedWeeks();
+    let availableSubjects = [];
+
+    if (selectedWeeks.length === 0) {
+        // 如果全沒選，顯示所有出現過的主題
+        availableSubjects = [...new Set(processedData.map(d => d._subject))];
+    } else {
+        // 僅顯示所選週次內含的主題
+        availableSubjects = [...new Set(
+            processedData.filter(d => selectedWeeks.includes(d._week)).map(d => d._subject)
+        )];
+    }
+
+    const currentSub = subjectSelect.value;
+    subjectSelect.innerHTML = '<option value="all">顯示該週所有主題</option>';
+    availableSubjects.sort().forEach(s => {
+        if(s && s.trim() !== "") subjectSelect.add(new Option(s, s));
+    });
+
+    // 嘗試恢復之前選取的主題
+    if ([...subjectSelect.options].some(o => o.value === currentSub)) {
+        subjectSelect.value = currentSub;
+    }
+
+    renderTable();
+}
+
+// 5. 渲染表格
+function renderTable() {
+    tableBody.innerHTML = "";
+    const selectedWeeks = getSelectedWeeks();
+    const selectedSub = subjectSelect.value;
+
+    processedData.forEach(item => {
+        const matchW = selectedWeeks.length === 0 || selectedWeeks.includes(item._week);
+        const matchS = selectedSub === "all" || item._subject === selectedSub;
+
+        if (matchW && matchS) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td style="color:#888">${item.w || ""}</td>
+                <td><small style="color:#aaa">${item.t || ""}</small><br>${item.s || ""}</td>
+                <td class="word-cell">${item.word}</td>
+                <td><button class="btn-speak" onclick="speak('${item.word}')">🔊 播放</button></td>
+                <td onclick="lookup('${item.word}')" style="cursor:pointer; color:#4a90e2;">${item.trans || "🔍 查詢"}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+    });
+}
+
+// 6. 取得勾選狀態
+function getSelectedWeeks() {
+    return Array.from(document.querySelectorAll('input[name="week"]:checked')).map(cb => cb.value);
+}
+
+// 7. Google TTS 發音功能 (取代舊的 speechSynthesis)
+function speak(text) {
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+    }
+    // 設定語速 0.9 (可根據需求調整 0.8~1.0)
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob&ttsspeed=0.9`;
+    window.currentAudio = new Audio(url);
+    window.currentAudio.play().catch(e => console.log("Audio play blocked", e));
+}
+
+// 8. 翻譯查詢
+function lookup(word) {
+    window.open(`https://translate.google.com/?sl=en&tl=zh-TW&text=${encodeURIComponent(word)}&op=translate`, '_blank');
+}
+
+// 監聽主題下拉選單
+subjectSelect.addEventListener("change", renderTable);
+
+// 初始執行一次
+renderTable();
+</script>
+
+</body>
+</html>
