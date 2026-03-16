@@ -2,254 +2,240 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>G4 單字播放器 - 複選與連動篩選版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 4 英文單字練習系統</title>
+    <script src="data.js"></script>
     <style>
-    body { font-family: "Microsoft JhengHei", sans-serif; margin: 10px; background-color: #f4f7f9; color: #333; }
-    .container { max-width: 1000px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    
-    h1 { text-align: center; font-size: 1.5em; color: #2c3e50; }
+        body { font-family: "Microsoft JhengHei", sans-serif; margin: 10px; background-color: #f4f7f9; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h1 { text-align: center; font-size: 1.5em; color: #2c3e50; }
 
-    /* 篩選區 */
-    .filter-section { 
-        background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; 
-        display: flex; flex-direction: column; gap: 15px; border: 1px solid #dee2e6;
-    }
-    .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-    label { font-weight: bold; font-size: 0.9em; color: #666; }
-
-    .week-checkbox-group {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 8px; max-height: 150px; overflow-y: auto;
-        border: 1px solid #ced4da; padding: 10px; border-radius: 6px;
-    }
-    .week-item { font-size: 0.95em; display: flex; align-items: center; gap: 5px; cursor: pointer; }
-
-    /* 按鈕樣式 */
-    .btn-group { display: flex; gap: 10px; }
-    button.small-btn { padding: 4px 10px; font-size: 0.8em; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; }
-    .btn-speak { background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-size: 1.1em; cursor: pointer; }
-
-    /* 表格設計：關鍵在於手機版的轉換 */
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    thead { background-color: #4a90e2; color: white; }
-    th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-
-    /* 手機模式 (螢幕寬度小於 768px) */
-    @media screen and (max-width: 768px) {
-        .filter-section { padding: 10px; }
-        
-        /* 隱藏表頭 */
-        thead { display: none; }
-        
-        /* 讓每一列變成一張卡片 */
-        tr { 
-            display: block; background: #fff; border: 1px solid #e0e0e0; 
-            border-radius: 10px; margin-bottom: 15px; padding: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        /* 篩選與控制區 */
+        .filter-section { 
+            background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; 
+            display: flex; flex-direction: column; gap: 15px; border: 1px solid #dee2e6;
         }
-        
-        /* 讓每個儲存格變成塊狀 */
-        td { display: block; width: 100%; border: none; padding: 5px 0; box-sizing: border-box; }
-        
-        /* 特殊欄位排版 */
-        td:nth-of-type(1):before { content: "週次："; font-weight: bold; color: #888; }
-        td:nth-of-type(2):before { content: "主題："; font-weight: bold; color: #888; }
-        
-        .word-cell { font-size: 1.5em; text-align: center; color: #000; padding: 10px 0; }
-        
-        td:nth-of-type(5) { 
-            text-align: center; background: #f9f9f9; border-radius: 6px; padding: 12px; 
-            margin-top: 10px; color: #4a90e2; font-weight: bold;
-        }
-    }
+        .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        label { font-weight: bold; font-size: 0.9em; color: #666; }
 
-    /* 平板與電腦模式 */
-    @media screen and (min-width: 769px) {
-        .filter-section { flex-direction: row; }
-        h1 { font-size: 2em; }
-        .btn-speak { width: auto; }
-        .word-cell { font-size: 1.2em; }
-    }
-</style>
+        .week-checkbox-group {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px; max-height: 150px; overflow-y: auto;
+            border: 1px solid #ced4da; padding: 10px; border-radius: 6px;
+        }
+        .week-item { font-size: 0.95em; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+        /* 測驗模式按鈕樣式 */
+        .test-mode-container {
+            display: flex; align-items: center; gap: 10px; padding: 10px;
+            background: #fff5f5; border-radius: 8px; border: 1px dashed #d9534f;
+        }
+
+        /* 聽寫輸入框與回饋 */
+        .quiz-input {
+            width: 90%; padding: 8px; border: 2px solid #ccc; border-radius: 6px;
+            font-size: 1.1em; outline: none; transition: 0.3s;
+        }
+        .quiz-input.correct { border-color: #28a745; background-color: #eaffea; }
+        .quiz-input.wrong { border-color: #dc3545; background-color: #fff0f0; }
+        .feedback-icon { font-size: 1.2em; margin-left: 5px; }
+
+        /* 表格與卡片佈局 */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        thead { background-color: #4a90e2; color: white; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        .word-cell { font-size: 1.2em; font-weight: bold; }
+        
+        .translation-cell { cursor: pointer; color: #4a90e2; transition: 0.3s; min-height: 30px; }
+        .test-mode-hidden { color: transparent !important; background-color: #eee !important; border-radius: 4px; }
+        .test-mode-show { color: #4a90e2 !important; background-color: transparent !important; }
+
+        .btn-speak { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; width: 100%; }
+
+        /* 手機模式優化 (768px 以下) */
+        @media screen and (max-width: 768px) {
+            thead { display: none; }
+            tr { display: block; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; margin-bottom: 15px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+            td { display: block; width: 100%; border: none; padding: 5px 0; }
+            td:nth-of-type(1):before { content: "週次："; font-weight: bold; color: #888; }
+            td:nth-of-type(2):before { content: "主題："; font-weight: bold; color: #888; }
+            .word-cell { font-size: 1.5em; text-align: center; padding: 15px 0; }
+            .translation-cell { text-align: center; background: #f9f9f9; padding: 10px; border-radius: 6px; margin-top: 10px; }
+        }
+
+        @media screen and (min-width: 769px) {
+            .filter-section { flex-direction: row; }
+            .btn-speak { width: auto; }
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📚 Grade 4 單字播放器 </h1>
-    
-    <div class="filter-group">
-        <label>1. 選擇週次 (可複選)：</label>
-        <div style="margin-bottom: 8px;">
-           <button type="button" onclick="selectAllWeeks(true)" style="padding: 2px 8px; font-size: 0.8em; cursor: pointer;">全選</button>
-           <button type="button" onclick="selectAllWeeks(false)" style="padding: 2px 8px; font-size: 0.8em; cursor: pointer;">全不選</button>
-        </div>
-        <div id="weekContainer" class="week-checkbox-group">
+    <h1>📚 英文單字聽寫練習</h1>
+
+    <div class="filter-section">
+        <div class="filter-group">
+            <label>1. 選擇週次：</label>
+            <div style="margin-bottom: 5px;">
+                <button onclick="selectAllWeeks(true)">全選</button>
+                <button onclick="selectAllWeeks(false)">全不選</button>
             </div>
-    </div>
+            <div id="weekContainer" class="week-checkbox-group"></div>
+        </div>
 
         <div class="filter-group">
-            <label>2. 選擇主題 (連動)：</label>
-            <select id="subjectFilter">
-                <option value="all">顯示該週所有主題</option>
+            <label>2. 選擇主題：</label>
+            <select id="subjectFilter" style="padding: 8px; border-radius: 4px;">
+                <option value="all">顯示所有主題</option>
             </select>
         </div>
+
+        <div class="filter-group">
+            <label>3. 模式設定：</label>
+            <div class="test-mode-container">
+                <input type="checkbox" id="testMode" style="transform: scale(1.5);">
+                <label for="testMode" style="color: #d9534f;">啟動測驗模式</label>
+            </div>
+        </div>
     </div>
-    
+
     <table id="vocabTable">
         <thead>
             <tr>
-                <th width="12%">週次</th>
-                <th width="25%">類型 / 主題</th>
-                <th width="25%">單字</th>
-                <th width="15%">發音</th>
-                <th>中文翻譯</th>
+                <th>週次</th>
+                <th>類型/主題</th>
+                <th>單字</th>
+                <th>發音</th>
+                <th>中文</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
 </div>
 
-<script src="data.js"></script>
-
 <script>
     const weekContainer = document.getElementById("weekContainer");
-const subjectSelect = document.getElementById("subjectFilter");
-const tableBody = document.querySelector("#vocabTable tbody");
+    const subjectSelect = document.getElementById("subjectFilter");
+    const tableBody = document.querySelector("#vocabTable tbody");
+    const testModeToggle = document.getElementById("testMode");
 
-// 1. 資料預處理 (填補留白)
-let tW = "", tT = "", tS = "";
-const processedData = wordData.map(item => {
-    if (item.w && item.w.trim() !== "") tW = item.w;
-    if (item.t && item.t.trim() !== "") tT = item.t;
-    if (item.s && item.s.trim() !== "") tS = item.s;
-    return { ...item, _week: tW, _type: tT, _subject: tS };
-});
-
-// 2. 初始化週次複選框
-const uniqueWeeks = [...new Set(processedData.map(d => d._week))];
-uniqueWeeks.forEach(w => {
-    const label = document.createElement("label");
-    label.className = "week-item";
-    label.innerHTML = `<input type="checkbox" name="week" value="${w}"> ${w}`;
-    // 監聽勾選事件
-    label.querySelector('input').addEventListener('change', updateSubjectOptions);
-    weekContainer.appendChild(label);
-});
-
-// 3. 全選 / 全不選功能
-function selectAllWeeks(isSelectAll) {
-    const checkboxes = document.querySelectorAll('input[name="week"]');
-    checkboxes.forEach(cb => cb.checked = isSelectAll);
-    updateSubjectOptions(); // 觸發連動
-}
-
-// 4. 動態更新主題選單 (連動邏輯)
-function updateSubjectOptions() {
-    const selectedWeeks = getSelectedWeeks();
-    let availableSubjects = [];
-
-    if (selectedWeeks.length === 0) {
-        // 如果全沒選，顯示所有出現過的主題
-        availableSubjects = [...new Set(processedData.map(d => d._subject))];
-    } else {
-        // 僅顯示所選週次內含的主題
-        availableSubjects = [...new Set(
-            processedData.filter(d => selectedWeeks.includes(d._week)).map(d => d._subject)
-        )];
-    }
-
-    const currentSub = subjectSelect.value;
-    subjectSelect.innerHTML = '<option value="all">顯示該週所有主題</option>';
-    availableSubjects.sort().forEach(s => {
-        if(s && s.trim() !== "") subjectSelect.add(new Option(s, s));
+    // 1. 資料預處理
+    let tW = "", tT = "", tS = "";
+    const processedData = wordData.map(item => {
+        if (item.w && item.w.trim() !== "") tW = item.w;
+        if (item.t && item.t.trim() !== "") tT = item.t;
+        if (item.s && item.s.trim() !== "") tS = item.s;
+        return { ...item, _week: tW, _type: tT, _subject: tS };
     });
 
-    // 嘗試恢復之前選取的主題
-    if ([...subjectSelect.options].some(o => o.value === currentSub)) {
-        subjectSelect.value = currentSub;
-    }
-
-    renderTable();
-}
-
-// 5. 渲染表格
-function renderTable() {
-    tableBody.innerHTML = "";
-    const selectedWeeks = getSelectedWeeks();
-    const selectedSub = subjectSelect.value;
-
-    processedData.forEach(item => {
-        const matchW = selectedWeeks.length === 0 || selectedWeeks.includes(item._week);
-        const matchS = selectedSub === "all" || item._subject === selectedSub;
-
-        if (matchW && matchS) {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td style="color:#888">${item.w || ""}</td>
-                <td><small style="color:#aaa">${item.t || ""}</small><br>${item.s || ""}</td>
-                <td class="word-cell">${item.word}</td>
-                <td><button class="btn-speak" onclick="speak('${item.word}')">🔊 播放</button></td>
-                <td onclick="lookup('${item.word}')" style="cursor:pointer; color:#4a90e2;">${item.trans || "🔍 查詢"}</td>
-            `;
-            tableBody.appendChild(row);
-        }
+    // 2. 初始化
+    const uniqueWeeks = [...new Set(processedData.map(d => d._week))];
+    uniqueWeeks.forEach(w => {
+        const label = document.createElement("label");
+        label.className = "week-item";
+        label.innerHTML = `<input type="checkbox" name="week" value="${w}"> ${w}`;
+        label.querySelector('input').addEventListener('change', updateSubjectOptions);
+        weekContainer.appendChild(label);
     });
-}
 
-// 6. 取得勾選狀態
-function getSelectedWeeks() {
-    return Array.from(document.querySelectorAll('input[name="week"]:checked')).map(cb => cb.value);
-}
-
-// 7.  發音功能  方案三：優先使用真人音檔，失敗則跳回方案二
-async function speak(text) {
-    // 先停止目前所有正在播放的聲音 (包含系統語音與 Audio 物件)
-    window.speechSynthesis.cancel();
-    if (window.currentAudio) {
-        window.currentAudio.pause();
-        window.currentAudio.currentTime = 0;
+    function selectAllWeeks(isSelectAll) {
+        document.querySelectorAll('input[name="week"]').forEach(cb => cb.checked = isSelectAll);
+        updateSubjectOptions();
     }
 
-    try {
-        // 1. 向 Free Dictionary API 請求資料
-        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${text.toLowerCase()}`);
-        
-        if (!response.ok) throw new Error("API 無此單字資料");
-
-        const data = await response.json();
-        
-        // 2. 尋找含有音訊連結的欄位 (優先尋找美式發音 -us)
-        const phonetics = data[0].phonetics;
-        const audioObj = phonetics.find(p => p.audio && p.audio.includes('-us')) || phonetics.find(p => p.audio !== "");
-        
-        if (audioObj && audioObj.audio) {
-            console.log("正在播放真人音檔:", audioObj.audio);
-            window.currentAudio = new Audio(audioObj.audio);
-            window.currentAudio.play();
+    function updateSubjectOptions() {
+        const selectedWeeks = getSelectedWeeks();
+        let availableSubjects = [];
+        if (selectedWeeks.length === 0) {
+            availableSubjects = [...new Set(processedData.map(d => d._subject))];
         } else {
-            throw new Error("找不到音檔連結");
+            availableSubjects = [...new Set(processedData.filter(d => selectedWeeks.includes(d._week)).map(d => d._subject))];
         }
-
-    } catch (error) {
-        console.warn("方案三失敗，切換回方案二 (備援):", error.message);
-        
-        // 3. 備援機制 (方案二)
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'en-US';
-        msg.rate = 0.9;
-        window.speechSynthesis.speak(msg);
+        subjectSelect.innerHTML = '<option value="all">顯示所有主題</option>';
+        availableSubjects.sort().forEach(s => { if(s) subjectSelect.add(new Option(s, s)) });
+        renderTable();
     }
-}
-// 8. 翻譯查詢
-function lookup(word) {
-    window.open(`https://translate.google.com/?sl=en&tl=zh-TW&text=${encodeURIComponent(word)}&op=translate`, '_blank');
-}
 
-// 監聽主題下拉選單
-subjectSelect.addEventListener("change", renderTable);
+    // 3. 渲染與聽寫檢查
+    function renderTable() {
+        tableBody.innerHTML = "";
+        const selectedWeeks = getSelectedWeeks();
+        const selectedSub = subjectSelect.value;
+        const isTestMode = testModeToggle.checked;
 
-// 初始執行一次
-renderTable();
+        processedData.forEach(item => {
+            const matchW = selectedWeeks.length === 0 || selectedWeeks.includes(item._week);
+            const matchS = selectedSub === "all" || item._subject === selectedSub;
+
+            if (matchW && matchS) {
+                const row = document.createElement("tr");
+                const transClass = isTestMode ? "translation-cell test-mode-hidden" : "translation-cell";
+                
+                let wordDisplay = isTestMode ? 
+                    `<input type="text" class="quiz-input" placeholder="聽音拼字..." onkeyup="if(event.key==='Enter') checkAnswer(this, '${item.word}')"> <span class="feedback-icon"></span>` : 
+                    item.word;
+
+                row.innerHTML = `
+                    <td>${item.w || ""}</td>
+                    <td><small>${item.t || ""}</small><br>${item.s || ""}</td>
+                    <td class="word-cell">${wordDisplay}</td>
+                    <td><button class="btn-speak" onclick="speak('${item.word}')">🔊 播放</button></td>
+                    <td class="${transClass}" onclick="toggleTranslation(this, '${item.word}')">${item.trans || "🔍 查詢"}</td>
+                `;
+                tableBody.appendChild(row);
+            }
+        });
+    }
+
+    function checkAnswer(inputEl, correctAnswer) {
+        const userAnsw = inputEl.value.trim().toLowerCase();
+        const correctAnsw = correctAnswer.trim().toLowerCase();
+        const feedback = inputEl.nextElementSibling;
+        if (userAnsw === "") return;
+        if (userAnsw === correctAnsw) {
+            inputEl.className = "quiz-input correct";
+            feedback.innerHTML = "✅";
+        } else {
+            inputEl.className = "quiz-input wrong";
+            feedback.innerHTML = "❌";
+        }
+    }
+
+    function toggleTranslation(el, word) {
+        if (testModeToggle.checked) {
+            el.classList.toggle("test-mode-hidden");
+            el.classList.toggle("test-mode-show");
+        } else {
+            window.open(`https://translate.google.com/?sl=en&tl=zh-TW&text=${encodeURIComponent(word)}&op=translate`, '_blank');
+        }
+    }
+
+    // 4. 發音邏輯 (方案三 + 備援方案二)
+    async function speak(text) {
+        window.speechSynthesis.cancel();
+        if (window.currentAudio) { window.currentAudio.pause(); }
+
+        try {
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${text.trim().toLowerCase()}`);
+            const data = await response.json();
+            const audioUrl = data[0].phonetics.find(p => p.audio !== "")?.audio;
+            if (audioUrl) {
+                window.currentAudio = new Audio(audioUrl);
+                await window.currentAudio.play();
+            } else { throw new Error(); }
+        } catch (e) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'en-US'; msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+        }
+    }
+
+    function getSelectedWeeks() { return Array.from(document.querySelectorAll('input[name="week"]:checked')).map(cb => cb.value); }
+
+    testModeToggle.addEventListener("change", renderTable);
+    subjectSelect.addEventListener("change", renderTable);
+    renderTable();
 </script>
 
 </body>
