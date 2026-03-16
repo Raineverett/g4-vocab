@@ -201,24 +201,17 @@ function getSelectedWeeks() {
     return Array.from(document.querySelectorAll('input[name="week"]:checked')).map(cb => cb.value);
 }
 
-// 7. Google TTS 發音功能 (取代舊的 speechSynthesis)
+// 7.  發音功能  speechSynthesis
 function speak(text) {
-    if (window.currentAudio) {
-        window.currentAudio.pause();
-    }
+    // 強制停止正在進行的發音
+    window.speechSynthesis.cancel();
 
-    // 嘗試改用 client=gtx 這是另一個常見的開放接口
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=gtx&ttsspeed=0.9`;
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'en-US';
+    msg.rate = 0.9;
 
-    window.currentAudio = new Audio();
-    window.currentAudio.crossOrigin = "anonymous"; // 嘗試處理跨網域問題
-    window.currentAudio.src = url;
-    
-    window.currentAudio.play().catch(e => {
-        console.error("發音失敗，可能需要手動驗證 Google 機器人:", e);
-        // 如果失敗，開啟一個新視窗讓使用者手動解開驗證碼
-        // window.open(url, '_blank'); 
-    });
+    // 針對 iOS/Android 的特殊優化：確保在使用者點擊事件中執行
+    window.speechSynthesis.speak(msg);
 }
 
 // 8. 翻譯查詢
