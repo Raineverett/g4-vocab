@@ -201,19 +201,45 @@ function getSelectedWeeks() {
     return Array.from(document.querySelectorAll('input[name="week"]:checked')).map(cb => cb.value);
 }
 
-// 7.  發音功能  speechSynthesis
-function speak(text) {
-    // 強制停止正在進行的發音
+// 7.  發音功能  方案三：優先使用真人音檔，失敗則跳回方案二
+async function speak(text) {
+    // 先停止目前所有正在播放的聲音 (包含系統語音與 Audio 物件)
     window.speechSynthesis.cancel();
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+        window.currentAudio.currentTime = 0;
+    }
 
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = 'en-US';
-    msg.rate = 0.9;
+    try {
+        // 1. 向 Free Dictionary API 請求資料
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${text.toLowerCase()}`);
+        
+        if (!response.ok) throw new Error("API 無此單字資料");
 
-    // 針對 iOS/Android 的特殊優化：確保在使用者點擊事件中執行
-    window.speechSynthesis.speak(msg);
+        const data = await response.json();
+        
+        // 2. 尋找含有音訊連結的欄位 (優先尋找美式發音 -us)
+        const phonetics = data[0].phonetics;
+        const audioObj = phonetics.find(p => p.audio && p.audio.includes('-us')) || phonetics.find(p => p.audio !== "");
+        
+        if (audioObj && audioObj.audio) {
+            console.log("正在播放真人音檔:", audioObj.audio);
+            window.currentAudio = new Audio(audioObj.audio);
+            window.currentAudio.play();
+        } else {
+            throw new Error("找不到音檔連結");
+        }
+
+    } catch (error) {
+        console.warn("方案三失敗，切換回方案二 (備援):", error.message);
+        
+        // 3. 備援機制 (方案二)
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'en-US';
+        msg.rate = 0.9;
+        window.speechSynthesis.speak(msg);
+    }
 }
-
 // 8. 翻譯查詢
 function lookup(word) {
     window.open(`https://translate.google.com/?sl=en&tl=zh-TW&text=${encodeURIComponent(word)}&op=translate`, '_blank');
