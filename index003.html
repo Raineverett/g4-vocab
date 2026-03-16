@@ -206,10 +206,19 @@ function speak(text) {
     if (window.currentAudio) {
         window.currentAudio.pause();
     }
-    // 設定語速 0.9 (可根據需求調整 0.8~1.0)
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob&ttsspeed=0.9`;
-    window.currentAudio = new Audio(url);
-    window.currentAudio.play().catch(e => console.log("Audio play blocked", e));
+
+    // 嘗試改用 client=gtx 這是另一個常見的開放接口
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=gtx&ttsspeed=0.9`;
+
+    window.currentAudio = new Audio();
+    window.currentAudio.crossOrigin = "anonymous"; // 嘗試處理跨網域問題
+    window.currentAudio.src = url;
+    
+    window.currentAudio.play().catch(e => {
+        console.error("發音失敗，可能需要手動驗證 Google 機器人:", e);
+        // 如果失敗，開啟一個新視窗讓使用者手動解開驗證碼
+        // window.open(url, '_blank'); 
+    });
 }
 
 // 8. 翻譯查詢
